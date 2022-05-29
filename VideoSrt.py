@@ -1,6 +1,6 @@
-from re import split
-from select import select
-from matplotlib.pyplot import connect
+#from re import split
+#from select import select
+#from matplotlib.pyplot import connect
 import paddle
 from paddlespeech.cli import ASRExecutor
 from pydub import AudioSegment
@@ -9,11 +9,10 @@ import os
 import threading
 import math
 from zmq import device
-from PyQt5 import QtCore
-from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+#from PyQt5 import QtCore
+from PyQt5.QtWidgets import QWidget,QGridLayout,QLineEdit,QPushButton,QSlider,QLabel,QFileDialog,QApplication
+#from PyQt5.QtGui import *
+from PyQt5.QtCore import Qt
 import sys
 def DateString(time,farme=30):
     s=math.floor(time/1000)
@@ -35,9 +34,11 @@ class Window(QWidget):
 
         self.def_folder=QLineEdit()
         self.def_folder.setText("V:\\")
+        self.def_folder.setPlaceholderText("默认工作文件夹路径")
         layout.addWidget(self.def_folder) #默认工作文件夹
 
         self.inputfile=QLineEdit()
+        self.inputfile.setPlaceholderText("需要转换的文件(mp3 mp4 flv mkv)")
         layout.addWidget(self.inputfile) #需要转换的文件
 
         self.inputfilebutton=QPushButton()
