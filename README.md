@@ -1,8 +1,10 @@
 # AutoVideoSrt
 
-使用pydub与 paddlespeech将音频转换为srt字幕文件
+使用pydub与 fastasr将音频转换为srt字幕文件
 
 使用时请安装上述两个python库，如何安装详见他们的库说明
+
+此外还需要下载paraformer_cli模型
 
 ### 使用说明
 
@@ -15,6 +17,8 @@
 请将ffmpeg添加在PATH路径，重启生效，或者使用临时添加命令（懂的都懂
 
 #### 开始使用
+
+0.设置模型存储位置
 
 1.选择文件 选择需要转字幕的文件mp4 mp3 等ffmpeg支持的音频视频文件
 

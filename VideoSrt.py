@@ -1,24 +1,25 @@
 #from re import split
 #from select import select
 #from matplotlib.pyplot import connect
-import paddle
-from paddlespeech.cli import ASRExecutor
 from pydub import AudioSegment
 from pydub.silence import detect_nonsilent
 import os
 import threading
 import math
-from zmq import device
+#from zmq import device
 #from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget,QGridLayout,QLineEdit,QPushButton,QSlider,QLabel,QFileDialog,QApplication
 #from PyQt5.QtGui import *
 from PyQt5.QtCore import Qt
+import fastasr
+import soundfile as sf
+
 import sys
 def DateString(time,farme=30):
     s=math.floor(time/1000)
     m=math.floor(s/60)
     h=math.floor(m/60)
-    f=math.floor((time%1000)/1000*farme)
+    f=math.floor(time%1000)
     s=s%60
     return "{:0>2d}:{:0>2d}:{:0>2d},{:0>3d}".format(h,m,s,f)
 
@@ -37,6 +38,11 @@ class Window(QWidget):
         self.def_folder.setPlaceholderText("默认工作文件夹路径")
         layout.addWidget(self.def_folder) #默认工作文件夹
 
+        self.def_model_folder=QLineEdit()
+        self.def_model_folder.setText("D:\\Program\\AutoVideoSrt\\paraformer_cli")
+        self.def_model_folder.setPlaceholderText("默认模型文件夹路径")
+        layout.addWidget(self.def_model_folder) #默认模型文件夹路径
+        
         self.inputfile=QLineEdit()
         self.inputfile.setPlaceholderText("需要转换的文件(mp3 mp4 flv mkv)")
         layout.addWidget(self.inputfile) #需要转换的文件
@@ -125,7 +131,7 @@ class Window(QWidget):
                 end=len(chunkstime)
             else:
                 end=(i+1)*jianju
-            thread_list.append(VoiceToSrt(i,chunkstime[start:end],start,audio,self.def_folder.text()))
+            thread_list.append(VoiceToSrt(i,chunkstime[start:end],start,audio,self.def_folder.text(),self.def_model_folder.text()))
         for thread in thread_list:
             thread.start()
         for thread in thread_list:
@@ -134,28 +140,24 @@ class Window(QWidget):
             for i in range(len(chunkstime)):
                 os.write(srt, srtlist[i].encode("utf-8"))
         os.close(srt)
+        print("完成!")
 class VoiceToSrt(threading.Thread): 
-    def __init__(self, threadID,chunkstime,start,audio,def_folder):
+    def __init__(self, threadID,chunkstime,start,audio,def_folder,def_model_folder):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.chunkstime=chunkstime
         self.startid=start
-        self.asr_executor = ASRExecutor()
         self.audio=audio
         self.def_folder=def_folder
+        self.def_model_folder=def_model_folder
     def run(self):
+        p = fastasr.Model(self.def_model_folder, 3)
         for i, chunk in enumerate(self.chunkstime):
             self.audio[chunk[0]:chunk[1]].export(self.def_folder+"outwav/{}-{}.wav".format(self.threadID,i),format='wav')
-            text = self.asr_executor(
-            model='conformer_wenetspeech',
-            lang='zh',
-            sample_rate=16000,
-            config=None,  # Set `config` and `ckpt_path` to None to use pretrained model.
-            ckpt_path=None,
-            audio_file=self.def_folder+'outwav/{}-{}.wav'.format(self.threadID,i),
-            force_yes=False,
-            device=paddle.get_device())
-            print("Device:",paddle.get_device())
+            data, samplerate = sf.read(self.def_folder+'outwav/{}-{}.wav'.format(self.threadID,i), dtype='int16')
+            audio_len = data.size / samplerate
+            p.reset()
+            text = p.forward(data)
             outsrtline="{}\n{} --> {}\n{}\n\n".format(self.startid+i+1,DateString(chunk[0]),DateString(chunk[1]),text)
             srtlist[self.startid+i]=outsrtline
             print("Thread:",self.threadID,text)
